@@ -19,15 +19,53 @@ class Ship {
   }
 }
 
+function loadResources(imageFileNames, callback) {
+  var images = {};
+  var imagesRemaining = imageFileNames.length;
+  
+  function imageLoaded() {
+    imagesRemaining -= 1;
+    if (imagesRemaining <= 0) {
+      callback();
+    }
+  }
+
+  for (let fileName of imageFileNames) {
+    var eachImage = new Image();
+    eachImage.addEventListener("load", imageLoaded);
+    eachImage.src = fileName + ".png";
+    images[fileName] = eachImage;
+  }
+  return images;
+}
+
+class Game {
+  constructor(canvas, images) {
+    this.canvas = canvas;
+    this.ship = new Ship(images.ship, 50, 50);
+    this.lastFrameTime = Date.now();
+  }
+
+  drawFrame() {
+    var now = Date.now();
+    var msElapsed = now - this.lastFrameTime;
+    var context = this.canvas.getContext("2d");
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ship.draw(context, msElapsed);
+    this.lastFrameTime = now;
+    requestAnimationFrame(this.drawFrame.bind(this));
+  }
+}
+
 function main() {
   var canvas = document.getElementById("canvas");
-  var context = canvas.getContext('2d');
-  var image = new Image(40, 34);
-  var ship = new Ship(image, 50, 50);
-  image.addEventListener("load", function() {
-    ship.draw(context, 0);
+  var images = loadResources(["ship"], function () {
+    images.ship.width = 40;
+    images.ship.height = 34;
+    var game = new Game(canvas, images);
+    game.drawFrame();
   });
-  image.src = "ship.png";
 }
 
 if (document.readyState === "interactive" || document.readyState === "complete") {
